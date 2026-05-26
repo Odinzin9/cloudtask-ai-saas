@@ -203,3 +203,8 @@ cdk.context.json
 logs/
 *.log.*
 
+# Configurações locais de ferramentas auxiliares (Claude Code / Cursor / etc.)
+.claude/
+.cursor/
+.aider*
+
