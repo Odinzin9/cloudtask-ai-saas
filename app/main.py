@@ -41,17 +41,22 @@ APP_DESCRIPTION = """\
 Mini **SaaS de gerenciamento de tarefas** construído ao longo da disciplina
 **Computação em Nuvem** (N-CPU / UNINTER).
 
-Esta é a versão da **Aula 1**: apenas endpoints básicos para validar a
-estrutura do projeto, do Docker e do devcontainer.
+Esta é a versão da **Semana 1** (versão `0.1.0`): FastAPI mínimo, Dockerfile
+multi-target, Docker Compose e devcontainer do VS Code.
 
 ### Status do projeto
 
-| Aula | Branch | Tema |
-| ---: | :--- | :--- |
-| <kbd>1</kbd> ← *você está aqui* | `semana-01-fastapi-docker` | FastAPI mínimo + Docker + devcontainer |
-| 2 | `semana-01-fastapi-docker` | Docker Compose |
-| 3 | `semana-02-rds-vpc-seguranca` | PostgreSQL + CRUD de tarefas |
-| 4 | `semana-02-rds-vpc-seguranca` | Config `.env` + docs VPC/IAM |
+> A coluna **Semana atual** está marcada com `← você está aqui`. A versão
+> da API é incrementada para `0.N.0` no início de cada semana.
+
+| Semana | Branch                          | Tema                                                          |
+| -----: | :------------------------------ | :------------------------------------------------------------ |
+| <kbd>1</kbd> ← *você está aqui* | `semana-01-fastapi-docker`      | FastAPI mínimo, Docker e Docker Compose, devcontainer         |
+|      2 | `semana-02-rds-vpc-seguranca`   | PostgreSQL + CRUD, config `.env`, docs de VPC/IAM             |
+|      3 | `semana-03-s3-kubernetes`       | Upload S3 (com fallback local), Kubernetes local (Kind)       |
+|      4 | `semana-04-eks-aws`             | Build/push para ECR, deploy no EKS                            |
+|      5 | `semana-05-custos-nosql-logs`   | HPA + teste de carga + Cost Explorer, eventos com DynamoDB    |
+|      6 | `semana-06-cdk-final`           | AWS CDK (S3, ECR, VPC), docs finais e checklist LGPD          |
 
 ### Tags
 
@@ -60,7 +65,7 @@ estrutura do projeto, do Docker e do devcontainer.
 
 ### Links úteis
 
-- [Issue da Aula 1](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues/1)
+- [Issue mais recente (Aula 2)](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues/2)
 - [Roadmap completo](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/blob/main/docs/ROADMAP.md)
 - [Lista de tarefas (`docs/TAREFAS.md`)](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/blob/main/docs/TAREFAS.md)
 
@@ -68,15 +73,14 @@ estrutura do projeto, do Docker e do devcontainer.
 <summary><b>Como rodar localmente</b></summary>
 
 ```bash
-# 1. Build da imagem de desenvolvimento
-docker build --target dev -t cloudtask-api:dev .
+# 1. Subir tudo via Docker Compose
+docker compose up --build
 
-# 2. Subir com hot-reload
-docker run --rm -p 8000:8000 -v "$(pwd):/app" cloudtask-api:dev
-
-# 3. Testar
+# 2. Testar
 curl http://localhost:8000/health
 ```
+
+Ou abra o projeto no VS Code e use `F1 → "Dev Containers: Reopen in Container"`.
 </details>
 """
 
