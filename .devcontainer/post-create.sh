@@ -19,8 +19,13 @@ echo "==> [post-create] Ajustando dono das credenciais montadas (host -> contain
 # devolvemos a posse ao appuser para o AWS CLI / kubectl conseguirem ler/escrever.
 # O '|| true' evita quebrar o build se a pasta não existir.
 sudo mkdir -p /home/appuser/.aws /home/appuser/.kube
-sudo chown -R appuser:appgroup /home/appuser/.aws /home/appuser/.kube || true
+sudo chown -R appuser:appuser /home/appuser/.aws /home/appuser/.kube || true
 chmod 700 /home/appuser/.aws /home/appuser/.kube || true
+
+# Pasta do histórico do zsh, persistida num volume (ver devcontainer.json).
+# POR QUÊ: o histórico de comandos sobrevive a rebuilds do container.
+sudo mkdir -p /commandhistory
+sudo chown -R appuser:appuser /commandhistory || true
 
 echo "==> [post-create] Instalando eksctl..."
 # Detecta a arquitetura para baixar o binário certo (amd64 x arm64).

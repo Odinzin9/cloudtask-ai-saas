@@ -27,13 +27,18 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     APP_PORT=8000
 
 # tini = init mínimo (PID 1). Garante shutdown limpo no Docker e no Kubernetes.
+#
+# O GRUPO tem o MESMO nome do usuário (appuser), seguindo a convenção dos
+# devcontainers. POR QUÊ: a feature common-utils (que instala o oh-my-zsh)
+# roda `chown ${USER}:${USER}` — se o grupo tivesse outro nome, o build
+# falharia com "chown: invalid group: appuser:appuser".
 RUN apt-get update \
  && apt-get install -y --no-install-recommends tini \
  && rm -rf /var/lib/apt/lists/* \
- && groupadd --system --gid 1001 appgroup \
- && useradd  --system --uid 1001 --gid appgroup --home /home/appuser appuser \
+ && groupadd --system --gid 1001 appuser \
+ && useradd  --system --uid 1001 --gid appuser --home /home/appuser appuser \
  && mkdir -p /app /home/appuser/.local \
- && chown -R appuser:appgroup /app /home/appuser
+ && chown -R appuser:appuser /app /home/appuser
 
 WORKDIR /app
 
@@ -69,8 +74,8 @@ RUN pip install --no-cache-dir --user -r requirements-dev.txt
 # ---------------------------------------------------------------------------
 FROM base AS prod
 
-COPY --from=builder-prod --chown=appuser:appgroup /root/.local /home/appuser/.local
-COPY --chown=appuser:appgroup app/ /app/app/
+COPY --from=builder-prod --chown=appuser:appuser /root/.local /home/appuser/.local
+COPY --chown=appuser:appuser app/ /app/app/
 
 USER appuser
 EXPOSE 8000
@@ -96,10 +101,10 @@ CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT} --proxy
 # ---------------------------------------------------------------------------
 FROM base AS test
 
-COPY --from=builder-test --chown=appuser:appgroup /root/.local /home/appuser/.local
-COPY --chown=appuser:appgroup app/          /app/app/
-COPY --chown=appuser:appgroup tests/        /app/tests/
-COPY --chown=appuser:appgroup pyproject.toml /app/pyproject.toml
+COPY --from=builder-test --chown=appuser:appuser /root/.local /home/appuser/.local
+COPY --chown=appuser:appuser app/          /app/app/
+COPY --chown=appuser:appuser tests/        /app/tests/
+COPY --chown=appuser:appuser pyproject.toml /app/pyproject.toml
 
 USER appuser
 
@@ -136,7 +141,7 @@ RUN apt-get update \
  && echo "appuser ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/appuser \
  && chmod 0440 /etc/sudoers.d/appuser
 
-COPY --from=builder-dev --chown=appuser:appgroup /root/.local /home/appuser/.local
+COPY --from=builder-dev --chown=appuser:appuser /root/.local /home/appuser/.local
 
 USER appuser
 

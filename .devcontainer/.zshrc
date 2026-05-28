@@ -47,6 +47,17 @@ plugins=(
 
 source "$ZSH/oh-my-zsh.sh"
 
+# ----- Histórico de comandos -------------------------------------------------
+# As setas ↑/↓ navegam no histórico e ←/→ movem dentro do comando (zsh já faz
+# isso por padrão). Guardamos o histórico em /commandhistory (volume), então
+# ele SOBREVIVE a rebuilds do container.
+HISTFILE=/commandhistory/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+setopt SHARE_HISTORY        # compartilha histórico entre abas/sessões
+setopt HIST_IGNORE_ALL_DUPS # não guarda comandos duplicados
+setopt HIST_IGNORE_SPACE    # comando começando com espaço não vai pro histórico
+
 # Binários Python instalados com `pip install --user` (uvicorn, pytest, ruff...).
 export PATH="$HOME/.local/bin:$PATH"
 

@@ -123,7 +123,9 @@
   // ---------------------------------------------------------------------------
   "mounts": [
     "source=${localEnv:USERPROFILE}/.aws,target=/home/appuser/.aws,type=bind,consistency=cached",
-    "source=${localEnv:USERPROFILE}/.kube,target=/home/appuser/.kube,type=bind,consistency=cached"
+    "source=${localEnv:USERPROFILE}/.kube,target=/home/appuser/.kube,type=bind,consistency=cached",
+    // Volume nomeado para o histórico do zsh sobreviver a rebuilds do container.
+    "source=cloudtask-zsh-history,target=/commandhistory,type=volume"
   ],
 
   // Instala eksctl + AWS CDK e ajusta permissões das credenciais montadas.
