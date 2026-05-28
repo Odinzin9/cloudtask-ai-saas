@@ -37,7 +37,20 @@
   "workspaceFolder": "/app",
   "shutdownAction": "stopCompose",
   "remoteUser": "appuser",
-  "overrideCommand": true,
+
+  // overrideCommand=false: o container roda o CMD do serviço `api` do compose,
+  // que é o do Dockerfile target dev -> `uvicorn ... --reload`. Ou seja, a API
+  // **sobe sozinha** quando o devcontainer abre. Acesse http://localhost:8000/docs
+  // (em DEV é HTTP, não HTTPS — TLS só na borda/ALB em produção).
+  //
+  // Os logs do uvicorn aparecem em `docker compose logs -f api` (ou no painel
+  // de logs do container no VS Code), pois o uvicorn é o processo principal.
+  //
+  // Para DEPURAR com breakpoints: o servidor automático já ocupa a porta 8000;
+  // pare-o (`docker compose stop api` e rode manualmente sob o debugger) OU use
+  // a config de "attach" do .vscode/launch.json. Para a maioria das aulas, o
+  // hot-reload automático basta.
+  "overrideCommand": false,
 
   // ---------------------------------------------------------------------------
   // Features = "add-ons" oficiais instalados no container durante o build.
