@@ -5,9 +5,9 @@
 
 <!-- Título e breve descrição do repositório -->
 <div align="center">
-  <h1>CloudTask AI SaaS — Aula 3</h1>
-  <p><b>Branch <code>semana-02-rds-vpc-seguranca</code> — estado pós Aula 3.</b></p>
-  <p>API FastAPI + <b>PostgreSQL</b> + CRUD de tarefas, em Docker Compose e devcontainer.</p>
+  <h1>CloudTask AI SaaS — Aula 4</h1>
+  <p><b>Branch <code>semana-02-rds-vpc-seguranca</code> — estado pós Aula 4.</b></p>
+  <p>API FastAPI + PostgreSQL + CRUD, agora com <b>config por <code>.env</code></b>, <b>readiness probe</b> e <b>HTTPS</b>.</p>
 </div>
 
 <p align="center">
@@ -22,16 +22,21 @@
   <a href="https://www.sqlalchemy.org/" title="SQLAlchemy">SQLAlchemy</a>
 </p>
 
-## O que foi entregue nesta aula
+## O que foi entregue nesta aula (Aula 4)
 
-- Serviço **`db` (PostgreSQL 16-alpine)** no `docker-compose.yml` — mesma engine do Amazon RDS, com healthcheck e `depends_on`.
-- Camada de dados em `app/db/`:
-  - `database.py` — engine, `SessionLocal`, `Base`, dependência `get_db`.
-  - `models.py` — modelo `Task` + enums `TaskStatus` / `TaskPriority`.
-  - `schemas.py` — `TaskCreate`, `TaskUpdate`, `TaskRead` (Pydantic, com exemplos no Swagger).
-- `app/api/routes_tasks.py` — **CRUD completo** de tarefas.
-- Criação automática das tabelas no startup (via `lifespan`).
-- Versão da API: **`0.2.0`** (início da Semana 2).
+- `app/core/config.py` — configuração central com **pydantic-settings** (lê `.env` / variáveis de ambiente, valida tipos).
+- `GET /health/ready` — **readiness probe** que faz `SELECT 1` no PostgreSQL (`200` pronto / `503` banco fora). `GET /health` permanece **liveness puro** (não toca no banco).
+- **HTTPS / transporte:**
+  - `uvicorn --proxy-headers` no `Dockerfile` (confia no `X-Forwarded-Proto` do ALB).
+  - **HSTS** enviado quando `FORCE_HTTPS=true` e fora de `development` (sem `preload`).
+  - `TrustedHostMiddleware` (hosts via `TRUSTED_HOSTS`).
+  - `HTTPSRedirectMiddleware` só no caso sem proxy (`FORCE_HTTPS=true` e `BEHIND_PROXY=false`).
+- Docs de segurança: `docs/https-tls.md`, `docs/aws-networking.md`, `docs/security-model.md`.
+- `.env.example` cobre `FORCE_HTTPS`, `BEHIND_PROXY`, `TRUSTED_HOSTS`.
+- Versão: **`0.2.0`** (mesma Semana 2).
+
+### Já existia (Aula 3)
+- Serviço `db` (PostgreSQL 16-alpine) no compose; camada `app/db/` (database, models, schemas); CRUD `/tasks`; tabelas criadas no startup.
 
 > Tudo com **comentários didáticos** explicando motivo, impacto e risco de cada decisão.
 
@@ -40,7 +45,8 @@
 | Método | Caminho            | Descrição                              |
 | ------ | ------------------ | -------------------------------------- |
 | GET    | `/`                | Metadados da aplicação.                |
-| GET    | `/health`          | Liveness probe.                        |
+| GET    | `/health`          | Liveness probe (não toca no banco).    |
+| GET    | `/health/ready`    | Readiness probe (checa o PostgreSQL).  |
 | POST   | `/tasks`           | Criar tarefa (201).                    |
 | GET    | `/tasks`           | Listar tarefas (paginação `skip`/`limit`). |
 | GET    | `/tasks/{task_id}` | Obter tarefa por id (404 se não existe). |
@@ -126,16 +132,16 @@ usamos PostgreSQL 16 local, igual ao RDS.
 
 ## O que vem na próxima aula
 
-- **Aula 4 (mesma branch):** `app/core/config.py` (`.env` via pydantic-settings),
-  `GET /health/ready` (checa o PostgreSQL), **HTTPS** (FORCE_HTTPS, proxy-headers,
-  HSTS, mkcert local) e docs de VPC/IAM/segurança. Ver [issue #4](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues/4).
+- **Semana 3 (branch `semana-03-s3-kubernetes`):** upload de arquivos com Amazon S3
+  (com fallback local) e Kubernetes local com Kind. Versão sobe para `0.3.0`.
 
 ## Referências
 
-- Issue da aula: [#3 — Aula 3](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues/3)
+- Issue da aula: [#4 — Aula 4](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues/4)
 - Lista de tarefas: [`docs/TAREFAS.md`](docs/TAREFAS.md)
 - Guia geral: [`docs/HOW_TO_USE.md`](docs/HOW_TO_USE.md)
 - Setup do zero: [`docs/aws-academy-setup.md`](docs/aws-academy-setup.md)
+- Segurança: [`docs/security-model.md`](docs/security-model.md) · [`docs/aws-networking.md`](docs/aws-networking.md) · [`docs/https-tls.md`](docs/https-tls.md)
 - SQLAlchemy 2.0: <https://docs.sqlalchemy.org/en/20/>
 
 ## Licença

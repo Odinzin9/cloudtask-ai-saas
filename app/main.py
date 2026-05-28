@@ -30,10 +30,13 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, Request, Response, status
+from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app import __version__
 from app.api import routes_health, routes_tasks
+from app.core.config import settings
 from app.db.database import Base, engine
 from app.schemas import RootResponse
 
@@ -46,8 +49,9 @@ Mini **SaaS de gerenciamento de tarefas** construído ao longo da disciplina
 **Computação em Nuvem** (N-CPU / UNINTER).
 
 Esta é a versão da **Semana 2** (versão `0.2.0`): além da base da Semana 1
-(FastAPI + Docker + devcontainer), adicionamos **PostgreSQL** e o **CRUD de
-tarefas** (`/tasks`).
+(FastAPI + Docker + devcontainer), adicionamos **PostgreSQL** + **CRUD de
+tarefas** (`/tasks`), **configuração por `.env`**, **readiness probe**
+(`/health/ready`) e preparação de **HTTPS** (proxy-headers + HSTS).
 
 ### Status do projeto
 
@@ -71,7 +75,7 @@ tarefas** (`/tasks`).
 
 ### Links úteis
 
-- [Issue mais recente (Aula 3)](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues/3)
+- [Issue mais recente (Aula 4)](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/issues/4)
 - [Roadmap completo](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/blob/main/docs/ROADMAP.md)
 - [Lista de tarefas (`docs/TAREFAS.md`)](https://github.com/N-CPUninter/Computa-o-em-Nuvem---Projeto-exemplo-CloudTask-AI-SaaS/blob/main/docs/TAREFAS.md)
 
@@ -184,6 +188,56 @@ app = FastAPI(
 # Registra os routers na aplicação.
 app.include_router(routes_health.router)
 app.include_router(routes_tasks.router)
+
+
+# ---------------------------------------------------------------------------
+# Middlewares de segurança de transporte (HTTPS) — Aula 4.
+#
+# Estratégia (ver docs/https-tls.md):
+#   * O TLS termina na BORDA (ALB na nuvem; mkcert/proxy em dev). O app fala
+#     HTTP internamente e confia no cabeçalho X-Forwarded-Proto (uvicorn sobe
+#     com --proxy-headers — ver Dockerfile/compose).
+#   * O REDIRECT HTTP->HTTPS é do ALB quando há proxy. Só ativamos o
+#     HTTPSRedirectMiddleware no app no caso RARO de exposição direta sem proxy.
+#   * HSTS (Strict-Transport-Security) é enviado quando force_https e fora de
+#     desenvolvimento.
+# ---------------------------------------------------------------------------
+
+# TrustedHostMiddleware: rejeita requisições com Host header não autorizado
+# (mitiga Host header spoofing / cache poisoning). "*" (default em dev) aceita
+# qualquer host; em produção, liste o domínio real via TRUSTED_HOSTS.
+if settings.trusted_hosts and settings.trusted_hosts != ["*"]:
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.trusted_hosts)
+
+# Redirect no app SOMENTE quando forçamos HTTPS e NÃO há proxy na frente.
+# RISCO de ligar atrás de ALB: as health probes chegam em HTTP interno e
+# entrariam em loop de redirect -> pod marcado "unhealthy". Por isso a guarda
+# `and not settings.behind_proxy`.
+if settings.force_https and not settings.behind_proxy:
+    app.add_middleware(HTTPSRedirectMiddleware)
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next) -> Response:  # noqa: ANN001
+    """Adiciona o cabeçalho HSTS às respostas (quando aplicável).
+
+    HSTS (HTTP Strict Transport Security) instrui o navegador a SEMPRE usar
+    HTTPS para este domínio durante ``max-age`` segundos.
+
+    Cuidados refletidos no código:
+        * Só enviamos HSTS quando ``force_https`` está ligado **e** não estamos
+          em desenvolvimento — em ``localhost`` o HSTS atrapalharia testes em
+          HTTP.
+        * **Sem** ``preload``: a flag preload é praticamente irreversível
+          (o domínio fica meses na lista dos navegadores). Evitamos em projeto
+          didático.
+    """
+    response: Response = await call_next(request)
+    if settings.force_https and settings.app_env != "development":
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
+    return response
 
 
 @app.get(

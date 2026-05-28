@@ -28,11 +28,12 @@ RISCO/CUIDADO:
 
 from __future__ import annotations
 
-import os
 from collections.abc import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+
+from app.core.config import settings
 
 # ---------------------------------------------------------------------------
 # String de conexão.
@@ -43,14 +44,10 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 # Compose, "db" resolve para o container do PostgreSQL. Fora do Compose,
 # troque por "localhost".
 #
-# Em aula futura (Aula 4) isso migra para app/core/config.py (pydantic-settings).
-# Por enquanto lemos direto do ambiente, com um default para facilitar o
-# primeiro contato.
+# A partir da Aula 4, a URL vem de app/core/config.py (pydantic-settings),
+# que lê a variável de ambiente DATABASE_URL (e usa um default em dev).
 # ---------------------------------------------------------------------------
-DATABASE_URL: str = os.getenv(
-    "DATABASE_URL",
-    "postgresql+psycopg2://cloudtask:cloudtask@db:5432/cloudtask",
-)
+DATABASE_URL: str = settings.database_url
 
 # `pool_pre_ping=True`: antes de usar uma conexão do pool, o SQLAlchemy faz um
 # "ping" para garantir que ela não morreu (comum quando o banco reinicia).

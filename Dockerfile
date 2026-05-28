@@ -71,7 +71,11 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD python -c "import urllib.request,sys; \
       sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status == 200 else 1)"
 
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT}"]
+# --proxy-headers + --forwarded-allow-ips: faz o uvicorn confiar no cabeçalho
+# X-Forwarded-Proto enviado pelo ALB/proxy. POR QUÊ: sem isso, o app acha que
+# tudo é HTTP e pode gerar URLs/redirects errados. "*" confia em qualquer proxy
+# — aceitável porque, em produção, só o ALB fala com o pod (rede privada).
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT} --proxy-headers --forwarded-allow-ips='*'"]
 
 
 # ---------- Target final: DEV ----------------------------------------------
@@ -105,4 +109,6 @@ USER appuser
 # 8000: API.  5678: debugpy (Attach do VS Code).
 EXPOSE 8000 5678
 
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT} --reload"]
+# Em dev também usamos --proxy-headers (caso rode atrás de um proxy local com
+# mkcert) e --reload para hot-reload.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT} --reload --proxy-headers --forwarded-allow-ips='*'"]

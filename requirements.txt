@@ -6,6 +6,10 @@ fastapi>=0.115,<1.0
 uvicorn[standard]>=0.30,<1.0
 pydantic>=2.7,<3.0
 
+# --- Aula 4: configuração por variáveis de ambiente ---
+# pydantic-settings: lê .env / variáveis de ambiente e valida tipos (BaseSettings).
+pydantic-settings>=2.3,<3.0
+
 # --- Aula 3: banco de dados (PostgreSQL) ---
 # sqlalchemy: ORM — mapeia classes Python <-> tabelas SQL.
 sqlalchemy>=2.0,<3.0

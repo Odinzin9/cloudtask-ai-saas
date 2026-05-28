@@ -46,6 +46,43 @@ class HealthResponse(BaseModel):
     )
 
 
+class ReadyResponse(BaseModel):
+    """Resposta do endpoint :func:`app.api.routes_health.ready` (readiness).
+
+    Diferente do liveness (``/health``), este endpoint **verifica dependências
+    externas** — nesta aula, a conexão com o PostgreSQL.
+
+    Atributos:
+        status: ``"ready"`` quando tudo OK; ``"not_ready"`` quando alguma
+            dependência falhou.
+        db: estado da conexão com o banco (``"ok"`` ou ``"down"``).
+
+    Example:
+        >>> ReadyResponse(status="ready", db="ok").model_dump()
+        {'status': 'ready', 'db': 'ok'}
+    """
+
+    status: Literal["ready", "not_ready"] = Field(
+        ...,
+        description="`ready` se a app pode receber tráfego; senão `not_ready`.",
+        examples=["ready"],
+    )
+    db: Literal["ok", "down"] = Field(
+        ...,
+        description="Estado da conexão com o PostgreSQL.",
+        examples=["ok"],
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"status": "ready", "db": "ok"},
+                {"status": "not_ready", "db": "down"},
+            ]
+        }
+    )
+
+
 class RootResponse(BaseModel):
     """Resposta do endpoint raiz :func:`app.main.root`.
 
